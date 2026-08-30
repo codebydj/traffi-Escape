@@ -1,7 +1,7 @@
 /**
  * TRAFFIC ESCAPE — Road & Weather Atmosphere Engine
- * Handles 3-lane / 4-lane highway rendering, scrolling dash lines, roadside scenery,
- * day/night cycles, and multi-weather atmospheric effects (Clear, Heavy Rain & Lightning, Dense Fog, Snowstorm).
+ * Features smooth sub-pixel curb scrolling, animated highway expansion (3 to 4 lanes),
+ * roadside scenery, day/night cycles, and multi-weather atmospheric effects.
  */
 
 import { CONFIG } from './config.js';
@@ -12,27 +12,34 @@ export class Road {
     this.width = canvasWidth;
     this.height = canvasHeight;
 
-    // Calculate Road Geometry
-    this.roadWidth = this.width * CONFIG.ROAD_WIDTH_PERCENT;
-    this.leftEdge = (this.width - this.roadWidth) / 2;
-    this.rightEdge = this.leftEdge + this.roadWidth;
+    // Calculate Initial 3-Lane Road Geometry
+    this.laneCount = CONFIG.LANE_COUNT; // 3 lanes initial
+    this.targetLaneCount = 3;
+    
+    this.base3LaneWidth = this.width * 0.70;
+    this.base4LaneWidth = this.width * 0.88;
+    this.currentRoadWidth = this.base3LaneWidth;
+    
+    this.leftEdge = (this.width - this.currentRoadWidth) / 2;
+    this.rightEdge = this.leftEdge + this.currentRoadWidth;
+    this.laneWidth = this.currentRoadWidth / this.laneCount;
 
-    // Default to 3 lanes; dynamically expands to 4 lanes at Level 4+
-    this.laneCount = CONFIG.LANE_COUNT;
-    this.updateLaneGeometry(this.laneCount);
+    this.laneCenters = [];
+    this.updateLaneGeometry();
 
     // Scrolling & Motion
     this.offsetY = 0;
+    this.curbScrollY = 0;
     this.dashLength = 40;
     this.dashGap = 30;
 
-    // Environmental Objects (Trees, Street Lights, Signs)
+    // Environmental Objects (Trees, Street Lights)
     this.sceneryObjects = [];
     this.initScenery();
 
     // Day/Night & Atmosphere Parameters
     this.timeOfDay = 0; // 0: Day, 1: Sunset, 2: Night, 3: Dawn
-    this.ambientLight = 1.0; // 1.0 = Day, 0.35 = Dark Night
+    this.ambientLight = 1.0;
 
     // Weather Engine System ('clear', 'rain', 'fog', 'snow')
     this.weatherType = 'clear';
@@ -45,9 +52,8 @@ export class Road {
     this.initWeather();
   }
 
-  updateLaneGeometry(count) {
-    this.laneCount = count;
-    this.laneWidth = this.roadWidth / this.laneCount;
+  updateLaneGeometry() {
+    this.laneWidth = this.currentRoadWidth / this.laneCount;
     this.laneCenters = [];
     for (let i = 0; i < this.laneCount; i++) {
       this.laneCenters.push(this.leftEdge + this.laneWidth * (i + 0.5));
@@ -73,7 +79,6 @@ export class Road {
   }
 
   initWeather() {
-    // Rain Particles
     this.rainDrops = [];
     for (let i = 0; i < 70; i++) {
       this.rainDrops.push({
@@ -84,7 +89,6 @@ export class Road {
       });
     }
 
-    // Snowflakes
     this.snowFlakes = [];
     for (let i = 0; i < 60; i++) {
       this.snowFlakes.push({
@@ -96,7 +100,6 @@ export class Road {
       });
     }
 
-    // Fog Clouds
     this.fogClouds = [];
     for (let i = 0; i < 12; i++) {
       this.fogClouds.push({
@@ -115,18 +118,34 @@ export class Road {
 
   update(speed, distanceMeters, level = 1, dt = 0.016) {
     // Dynamic 4-Lane Highway Expansion at Level 4+
-    const targetLanes = level >= 4 ? 4 : 3;
-    if (this.laneCount !== targetLanes) {
-      this.updateLaneGeometry(targetLanes);
+    this.targetLaneCount = level >= 4 ? 4 : 3;
+    const targetWidth = this.targetLaneCount === 4 ? this.base4LaneWidth : this.base3LaneWidth;
+
+    // Smoothly animate road width expansion
+    if (Math.abs(this.currentRoadWidth - targetWidth) > 0.5) {
+      this.currentRoadWidth = lerp(this.currentRoadWidth, targetWidth, 2.5 * dt);
+      if (Math.abs(this.currentRoadWidth - targetWidth) < 4) {
+        this.laneCount = this.targetLaneCount;
+      }
+    } else {
+      this.currentRoadWidth = targetWidth;
+      this.laneCount = this.targetLaneCount;
     }
 
-    // Scroll road markings
+    this.leftEdge = (this.width - this.currentRoadWidth) / 2;
+    this.rightEdge = this.leftEdge + this.currentRoadWidth;
+    this.updateLaneGeometry();
+
+    // Scroll road markings & continuous sub-pixel curb offset
     const moveAmount = speed * 60 * dt;
     this.offsetY = (this.offsetY + moveAmount) % (this.dashLength + this.dashGap);
+    this.curbScrollY += moveAmount;
 
-    // Update Scenery
+    // Update Scenery positions along edges
     for (let obj of this.sceneryObjects) {
       obj.y += moveAmount;
+      obj.x = obj.side === 'left' ? this.leftEdge - 30 : this.rightEdge + 30;
+
       if (obj.y > this.height + 100) {
         obj.y -= this.height + 200;
         obj.type = Math.random() > 0.4 ? 'tree' : 'lamp';
@@ -149,7 +168,7 @@ export class Road {
       this.timeOfDay = 3;
     }
 
-    // Multi-Weather Transition Logic based on Level / Distance
+    // Multi-Weather Transition Logic based on Level
     if (level === 1) {
       this.weatherType = 'clear';
     } else if (level === 2) {
@@ -159,7 +178,6 @@ export class Road {
     } else if (level === 4) {
       this.weatherType = 'snow';
     } else {
-      // Dynamic cycling every 500m
       const wModeIndex = Math.floor(distanceMeters / 500) % 4;
       const wModes = ['clear', 'rain', 'fog', 'snow'];
       this.weatherType = wModes[wModeIndex];
@@ -176,7 +194,6 @@ export class Road {
         }
       }
 
-      // Lightning Flashes
       this.lightningTimer += dt;
       if (this.flashAlpha > 0) this.flashAlpha -= dt * 3;
       if (this.lightningTimer > 7 && Math.random() < 0.02) {
@@ -213,7 +230,7 @@ export class Road {
     else if (this.timeOfDay === 1) grassColor = '#78350f'; // Sunset warm amber
     else if (this.timeOfDay === 2) grassColor = '#0f172a'; // Deep night slate
 
-    if (this.weatherType === 'snow') grassColor = '#334155'; // Frost ground
+    if (this.weatherType === 'snow') grassColor = '#334155';
 
     ctx.fillStyle = grassColor;
     ctx.fillRect(0, 0, this.width, this.height);
@@ -224,18 +241,23 @@ export class Road {
     if (this.weatherType === 'snow') asphaltColor = '#1e293b';
 
     ctx.fillStyle = asphaltColor;
-    ctx.fillRect(this.leftEdge, 0, this.roadWidth, this.height);
+    ctx.fillRect(this.leftEdge, 0, this.currentRoadWidth, this.height);
 
-    // 3. Draw Red/White Curb Guard Rails along edge
+    // 3. BUTTER-SMOOTH CONTINUOUS SUB-PIXEL SCROLLING CURB GUARD RAILS
     const curbWidth = 10;
-    const stripeHeight = 30;
-    const curbOffsetY = this.offsetY % (stripeHeight * 2);
+    const stripeH = 32;
+    const scrollOffset = this.curbScrollY % (stripeH * 2);
 
-    for (let y = -stripeHeight * 2; y < this.height + stripeHeight; y += stripeHeight) {
-      const isRed = Math.floor((y - curbOffsetY) / stripeHeight) % 2 === 0;
+    for (let y = -stripeH * 2; y < this.height + stripeH * 2; y += stripeH) {
+      const drawY = y + scrollOffset;
+      const stripeIdx = Math.floor((drawY - this.curbScrollY) / stripeH);
+      const isRed = Math.abs(stripeIdx) % 2 === 0;
+
       ctx.fillStyle = isRed ? '#ef4444' : '#f8fafc';
-      ctx.fillRect(this.leftEdge - curbWidth, y + curbOffsetY, curbWidth, stripeHeight);
-      ctx.fillRect(this.rightEdge, y + curbOffsetY, curbWidth, stripeHeight);
+      // Left Curb
+      ctx.fillRect(this.leftEdge - curbWidth, drawY, curbWidth, stripeH + 0.5);
+      // Right Curb
+      ctx.fillRect(this.rightEdge, drawY, curbWidth, stripeH + 0.5);
     }
 
     // 4. Draw White Solid Road Outer Borders
@@ -254,8 +276,8 @@ export class Road {
     ctx.setLineDash([this.dashLength, this.dashGap]);
     ctx.lineDashOffset = -this.offsetY;
 
-    for (let i = 1; i < this.laneCount; i++) {
-      const lineX = this.leftEdge + this.laneWidth * i;
+    for (let i = 1; i < this.targetLaneCount; i++) {
+      const lineX = this.leftEdge + (this.currentRoadWidth / this.targetLaneCount) * i;
       ctx.beginPath();
       ctx.moveTo(lineX, -100);
       ctx.lineTo(lineX, this.height + 100);
@@ -303,9 +325,8 @@ export class Road {
       ctx.fillRect(0, 0, this.width, this.height);
     }
 
-    // 8. WEATHER ATMOSPHERE OVERLAYS
+    // 8. Weather Atmosphere Overlays
     if (this.weatherType === 'rain') {
-      // Raindrops
       ctx.strokeStyle = 'rgba(203, 213, 225, 0.48)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -315,13 +336,11 @@ export class Road {
       }
       ctx.stroke();
 
-      // Lightning Flash Overlay
       if (this.flashAlpha > 0) {
         ctx.fillStyle = `rgba(255, 255, 255, ${this.flashAlpha})`;
         ctx.fillRect(0, 0, this.width, this.height);
       }
     } else if (this.weatherType === 'snow') {
-      // Snowflakes
       ctx.fillStyle = 'rgba(248, 250, 252, 0.85)';
       ctx.beginPath();
       for (let flake of this.snowFlakes) {
@@ -330,7 +349,6 @@ export class Road {
       }
       ctx.fill();
     } else if (this.weatherType === 'fog') {
-      // Volumetric Rolling Fog Mist
       for (let cloud of this.fogClouds) {
         const fogGrad = ctx.createRadialGradient(cloud.x, cloud.y, 10, cloud.x, cloud.y, cloud.radius);
         fogGrad.addColorStop(0, 'rgba(226, 232, 240, 0.28)');

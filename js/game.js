@@ -103,6 +103,7 @@ export class GameEngine {
     this.isNewHighScore = false;
     this.prevBoostTimer = 0;
     this.prevMagnetTimer = 0;
+    this.prevWeatherType = null;
 
     this.player.reset();
     this.traffic.reset();
@@ -214,6 +215,29 @@ export class GameEngine {
 
     // 6. Entity Updates
     this.road.update(this.speed, this.distanceMeters, this.level, dt);
+
+    // Weather Change Floating Banner Notification (at Level Display position)
+    if (this.road.weatherType !== this.prevWeatherType) {
+      if (this.prevWeatherType !== null) {
+        const weatherNames = {
+          clear: '☀️ CLEAR SKIES',
+          rain: '🌧️ HEAVY RAINSTORM',
+          fog: '🌫️ DENSE FOG',
+          snow: '❄️ SNOWSTORM'
+        };
+        const weatherColors = {
+          clear: '#facc15',
+          rain: '#38bdf8',
+          fog: '#e2e8f0',
+          snow: '#a5f3fc'
+        };
+        const wText = weatherNames[this.road.weatherType] || 'WEATHER CHANGE';
+        const wColor = weatherColors[this.road.weatherType] || '#facc15';
+        this.particles.addFloatingText(this.road.width / 2, this.road.height / 3, wText, wColor, 24);
+      }
+      this.prevWeatherType = this.road.weatherType;
+    }
+
     this.player.update(dt);
     this.traffic.update(this.speed, this.player, this.level, this.distanceMeters, dt);
     this.coins.update(this.speed, this.player, dt, (coin) => this.handleCollectCoin(coin));

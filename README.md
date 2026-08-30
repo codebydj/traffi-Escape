@@ -1,14 +1,16 @@
 # 🚗 TRAFFIC ESCAPE — Complete Game Documentation
 
+Developed by **codebydj** (GitHub: [github.com/codebydj](https://github.com/codebydj))
+
 A polished, responsive, high-performance top-down 2D/3D-styled arcade highway driving game built with **HTML5 Canvas API, Vanilla JavaScript (ES Modules), and Modern CSS**. 
 
 Zero external dependencies, zero image asset files, zero audio asset files — everything is rendered procedurally with Canvas vector graphics and synthesized using the browser's Web Audio API.
 
 ---
 
-## 🎯 Game Overview
+## 🎯 About the Game
 
-In **Traffic Escape**, the player drives continuously down a 3-lane highway avoiding oncoming traffic (hatchbacks, sedans, trucks, buses), collecting spinning gold coins, activating superpowers, dodging close calls, and surviving as long as possible to set the ultimate high score!
+In **Traffic Escape**, the player controls a high-speed arcade vehicle driving continuously down a dynamic highway. Avoid oncoming traffic, collect spinning gold coins, grab superpowers, dodge close calls, survive through dynamic weather conditions, and adapt as the road expands into a **4-lane highway**!
 
 ```text
 START GAME
@@ -18,7 +20,8 @@ Drive Automatically ──► Avoid Traffic (◀ / ▶) ──► Near-Miss Dodg
    │
    ├─► Collect Coins (🪙) ──► Unlock Car Skins in Garage
    ├─► Grab Power-ups (🛡️ Shield, ⚡ Speed Boost, 🧲 Coin Magnet)
-   ├─► Speed & Level Ramp Up (100 km/h ──► 240+ km/h)
+   ├─► Dynamic Weather (Clear ──► Rain & Lightning ──► Fog ──► Snow)
+   ├─► Level 4+ Highway Expansion (3 Lanes ──► 4 Lanes)
    │
    ▼
 Crash into Traffic ──► 3-Life System / Shield Absorption ──► GAME OVER ──► Try Again!
@@ -26,43 +29,63 @@ Crash into Traffic ──► 3-Life System / Shield Absorption ──► GAME OV
 
 ---
 
-## ✨ Features Implemented
+## 🎮 How to Play
 
-### 1. 🏎️ Player Control & Smooth Movement
-- **3-Lane Position Logic**: Positions (Lane 0: Left, Lane 1: Center, Lane 2: Right).
-- **Linear Interpolation (`lerp`)**: Horizontal position smoothly slides between lane centers with sub-pixel precision.
-- **Controls**:
-  - **Desktop**: `Arrow Left` / `Arrow Right`, `A` / `D`, `P` (Pause).
-  - **Mobile**: Touch buttons (◀ LEFT / RIGHT ▶) positioned conveniently at the bottom of the screen for thumb access.
+1. **Drive & Dodge**: Your vehicle drives continuously up the highway. Use your controls to switch lanes and dodge oncoming traffic.
+2. **Collect Coins**: Gather gold coin trails along the road to spend in the Garage.
+3. **Grab Power-Ups**: Collect 🛡️ **Shield**, ⚡ **Speed Boost**, and 🧲 **Coin Magnet** items to survive longer and score faster.
+4. **Perform Near-Misses**: Drive extremely close to traffic vehicles without crashing to trigger a **NEAR MISS!** score bonus (+100 pts).
+5. **Adapt to Weather & Road Expansion**: As your distance increases, weather shifts dynamically and the highway expands into a 4-lane road at **Level 4**!
 
-### 2. 🚘 Intelligent & Fair Traffic Spawning
-- **Vehicle Types**:
-  - 🚗 **Small Hatchback**: Fast speed, compact size.
-  - 🚙 **Sedan**: Medium speed, standard proportions.
-  - 🚛 **Semi-Truck**: Slower speed, long trailer body.
-  - 🚌 **City Bus**: Wide & long body, challenging obstacle.
-- **Anti-Frustration Spawning Rules**:
-  - **Guaranteed Escape Route**: Enforces that at least 1 lane remains open at the top of the screen at all times. Never spawns an unavoidable 3-lane wall!
-  - **Safety Buffers**: Prevents spawning traffic directly in front of the player's current lane without reaction window.
+---
 
-### 3. ⚡ Power-Ups System
-- 🛡️ **Shield**: Protects against 1 traffic collision. Breaks with a forcefield flash & sound effect, granting a brief invincibility window.
-- ⚡ **Speed Boost (5s)**: Increases speed by 40%, applies a 2x score multiplier, motion blur effects, and speed lines.
-- 🧲 **Coin Magnet (7s)**: Dynamically pulls nearby coins on the highway towards the player's car using vector attraction physics.
+## 🕹️ Game Controls
 
-### 4. 🔥 Near-Miss Bonus System
-- Passing very close to an oncoming vehicle without crashing triggers a **NEAR MISS!** bonus (`+100 score`, floating text animation, and a high-pitch zap sound effect).
+| Action | Desktop Keyboard | Mobile Touch |
+| :--- | :--- | :--- |
+| **Move Left** | `←` (Left Arrow) or `A` | ◀ **LEFT** Button |
+| **Move Right** | `→` (Right Arrow) or `D` | **RIGHT** ▶ Button |
+| **Pause / Resume** | `P` or `Esc` | ⏸️ Pause Button |
+
+---
+
+## ✨ Core Game Features
+
+### 1. 🛣️ Dynamic 4-Lane Highway Expansion (Level 4+)
+- **Smooth Road Width Transition**: The highway starts as a 3-lane road (Lanes 0, 1, 2). Upon reaching **Level 4**, the road smoothly expands over ~1.5 seconds into a **4-lane highway** (Lanes 0, 1, 2, 3).
+- **Animated Dividers & Guard Rails**: Dashed lane dividers dynamically adapt from 2 inner lines to 3 inner lines. Red and white curb guard rails feature sub-pixel smooth scrolling at 60 FPS without popping.
+- **Level & Weather Floating Banners**: Reaching Level 4 displays a popup: `"LEVEL 4! 4-LANE HIGHWAY!"`.
+
+### 2. 🚘 9 Distinct Traffic Vehicle Types
+Oncoming traffic features 9 distinct vehicle types with custom vector designs and special behaviors:
+- 🚗 **Small Hatchback**: Fast speed, compact size.
+- 🚙 **Sedan**: Executive sedan proportions.
+- 🏎️ **Sports Supercar**: Sleek low aerodynamic profile, dual racing stripes, twin rear spoiler wing.
+- 🚔 **Police Cruiser**: Stealth black body with white doors and **flashing RED & BLUE siren strobe lights**!
+- 🚑 **Ambulance**: Emergency medical van with red cross emblem and **flashing red roof strobes**!
+- 🚐 **Delivery Cargo Van**: Boxy tall cargo panel van with rear doors.
+- 📐 **Cyber Truck**: Angular geometric armor body with a **Full-Width Horizon LED Light Bar**!
+- 🚛 **Semi-Truck**: Long cargo trailer body.
+- 🚌 **City Bus**: Wide & long body.
+- **Dynamic Lane Changing**: Traffic vehicles signal with flashing amber blinker lights (`#f59e0b`) and switch into open adjacent lanes smoothly while checking safety distances.
+
+### 3. 🌦️ Multi-Weather Atmosphere System
+Weather shifts dynamically based on game progression, displaying a floating text notification banner at the level popup position whenever the weather changes:
+- ☀️ **Clear Skies**: Sunny daylight / warm sunset / dark night cycles.
+- 🌧️ **Heavy Rainstorm & Lightning**: Slanted rain drops, splash particles, and occasional **distant lightning flashes** with screen overlays.
+- 🌫️ **Dense Highway Fog**: Volumetric rolling fog clouds through which vehicle headlights cut dramatically.
+- ❄️ **Snowstorm & Frost**: Swirling falling snowflakes with frosted ground side borders.
+
+### 4. ⚡ Power-Ups System
+- 🛡️ **Shield**: Protects against 1 traffic collision with a forcefield glow and brief invincibility window.
+- ⚡ **Speed Boost (5s)**: Boosts speed by 40%, applies a 2x score multiplier, motion blur effects, and speed lines.
+- 🧲 **Coin Magnet (7s)**: Dynamically pulls nearby coins towards your car using magnetic attraction physics.
 
 ### 5. 🔊 Procedural Web Audio API Synthesizer
-- Zero external audio files required! Synthesizes sound FX programmatically:
-  - Dynamic Engine Hum (pitch modulated by car speed).
-  - Crisp UI Button Clicks.
-  - Melodic Coin Pickup Chimes.
-  - Rising Dual-Tone Power-Up Sweep.
-  - High-Pitch Near-Miss Zap.
-  - Filtered Noise Burst + Sub-Bass Crash Rumble.
-  - Level-Up Fanfare Chords.
-  - Mute / Unmute audio setting with `localStorage` persistence.
+Zero external audio files required! Synthesizes sound programmatically:
+- **Starter Ignition Cue**: Starter relay click, low ignition pulse, and restrained rev sweep when Play / "GO!" appears.
+- **Sports-Car Engine Synth**: Dual `triangle` and `sine` oscillators with warm lowpass filtering for smooth motor rumble.
+- **FX Suite**: Countdown ticks, melodic coin chimes, rising power-up sweeps, near-miss zaps, crash impact rumbles, and level-up fanfare.
 
 ### 6. 🎨 Garage & Car Customization
 - **5 Unlockable Car Skins**:
@@ -72,22 +95,11 @@ Crash into Traffic ──► 3-Life System / Shield Absorption ──► GAME OV
   - 🟡 **Speed Yellow**: 1200 Coins
   - 🟣 **Neon Cyber**: 2000 Coins
 - Interactive Mini-Canvas Preview in Garage screen.
-- Coin balance and skin purchases persist across browser refreshes.
-
-### 7. 🌆 Day/Night & Weather Environment
-- **Atmospheric Transitions**: Smooth lighting shifts from Day → Sunset → Night → Dawn based on distance traveled.
-- **Night Lighting**: Oncoming traffic cars and player car project dynamic headlight cones onto the asphalt; roadside street lamps glow with radial light halos.
-- **Weather Effects**: Optional subtle rain drops with splash particles and wet road sheen reflections.
-
-### 8. 💥 Particle & Visual Effects Engine
-- Exhaust smoke particles emitted behind player car.
-- Coin collection sparkler bursts.
-- Multi-colored car debris explosions on crash.
-- Screen shake trauma decay system.
+- Total coin balance and skin purchases persist across browser refreshes.
 
 ---
 
-## 📁 File Architecture
+## 📁 Project Architecture
 
 ```text
 trafficEscape/
@@ -98,13 +110,13 @@ trafficEscape/
     ├── utils.js        # Math helpers (clamp, lerp, random), collision AABB, formatting
     ├── storage.js      # Safe LocalStorage persistence manager with fallbacks
     ├── audio.js        # Procedural Web Audio API sound synthesizer engine
-    ├── road.js         # Road rendering, lane markings, roadside env, day/night & rain
-    ├── player.js       # Player car physics, custom vector skin drawing, powerup states
-    ├── traffic.js      # Traffic vehicle classes & intelligent anti-trap spawning engine
-    ├── coin.js         # 3D spinning gold coins & magnetic vector attraction physics
-    ├── powerups.js     # Shield, Speed Boost & Coin Magnet items & duration tracking
-    ├── particles.js    # Particle explosion engine, floating text popups & screen shake
-    ├── garage.js       # Garage UI manager, skin purchasing & preview canvas renderer
+    ├── road.js         # Highway geometry, 4-lane expansion, smooth curbs & weather
+    ├── player.js       # Player car physics, custom skin drawing, headlight beams
+    ├── traffic.js      # 9 Traffic vehicle types, flashing sirens & lane switching
+    ├── coin.js         # 3D spinning gold coins, long lines, double-lines & magnet physics
+    ├── powerups.js     # Shield, Speed Boost & Coin Magnet items
+    ├── particles.js    # Particle explosions, floating text popups & screen shake
+    ├── garage.js       # Garage UI manager, skin purchasing & preview renderer
     ├── ui.js           # HUD manager, score displays & screen state navigation
     ├── game.js         # 60 FPS loop, state machine, collision & scoring logic
     └── main.js         # Entry point initialization, retina canvas scaling & event bindings
@@ -112,31 +124,25 @@ trafficEscape/
 
 ---
 
-## 🕹️ Controls
-
-| Action | Desktop Keyboard | Mobile Touch |
-| :--- | :--- | :--- |
-| **Move Left** | `←` (Left Arrow) or `A` | ◀ **LEFT** Button |
-| **Move Right** | `→` (Right Arrow) or `D` | **RIGHT** ▶ Button |
-| **Pause / Resume** | `P` or `Esc` | ⏸️ Pause Button |
-
----
-
 ## 🚀 How to Run the Game
 
-1. **Clone / Download** the repository directory.
-2. Open `index.html` directly in any modern Web Browser (Chrome, Edge, Firefox, Safari).
-   - Alternatively, serve using any static web server:
-     ```bash
-     npx serve -l 8080
-     ```
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/codebydj/traffi-Escape.git
+   cd traffi-Escape
+   ```
+2. **Open in Browser**:
+   Open `index.html` directly in modern web browsers (Chrome, Edge, Firefox, Safari), or serve using any static web server:
+   ```bash
+   npx serve -l 8080
+   ```
 3. Open `http://localhost:8080` in your browser and click **PLAY GAME**!
 
 ---
 
 ## 🏆 Data Persistence (`localStorage`)
 
-The game automatically saves and persists the following data locally:
+The game automatically saves and persists data locally:
 - `highScore`: Personal best score.
 - `bestDistance`: Maximum distance driven (in km).
 - `totalCoins`: Cumulative coins collected for spending in Garage.
@@ -146,9 +152,7 @@ The game automatically saves and persists the following data locally:
 
 ---
 
-## 💻 Technical Highlights
+## 👨‍💻 Developer & License
 
-- **Framework-less Architecture**: Pure Vanilla JavaScript with zero external build steps or node dependencies.
-- **60 FPS Performance**: Optimized `requestAnimationFrame` render loop with delta-time calculation (`dt`).
-- **High-DPI Retina Canvas**: Crisp rendering on mobile devices and high-resolution screens.
-- **Accessible & Responsive**: High-contrast UI, full keyboard navigation support, and dynamic aspect-ratio fitting.
+Created by **codebydj**  
+GitHub Repository: [github.com/codebydj/traffi-Escape](https://github.com/codebydj/traffi-Escape)

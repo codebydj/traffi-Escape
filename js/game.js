@@ -104,6 +104,8 @@ export class GameEngine {
     this.prevBoostTimer = 0;
     this.prevMagnetTimer = 0;
     this.prevWeatherType = null;
+    this.coinStreak = 0;
+    this.coinStreakTimer = 0;
 
     this.player.reset();
     this.traffic.reset();
@@ -216,7 +218,7 @@ export class GameEngine {
     // 6. Entity Updates
     this.road.update(this.speed, this.distanceMeters, this.level, dt);
 
-    // Weather Change Floating Banner Notification (at Level Display position)
+    // Weather Change Floating Banner Notification (Displayed BELOW Level Name)
     if (this.road.weatherType !== this.prevWeatherType) {
       if (this.prevWeatherType !== null) {
         const weatherNames = {
@@ -233,9 +235,17 @@ export class GameEngine {
         };
         const wText = weatherNames[this.road.weatherType] || 'WEATHER CHANGE';
         const wColor = weatherColors[this.road.weatherType] || '#facc15';
-        this.particles.addFloatingText(this.road.width / 2, this.road.height / 3, wText, wColor, 24);
+        // Positioned at height / 3 + 36 (directly below Level Name banner)
+        this.particles.addFloatingText(this.road.width / 2, this.road.height / 3 + 36, wText, wColor, 22);
       }
       this.prevWeatherType = this.road.weatherType;
+    }
+
+    // Coin Streak Timer Decay
+    if (this.coinStreakTimer > 0) {
+      this.coinStreakTimer -= dt;
+    } else {
+      this.coinStreak = 0;
     }
 
     this.player.update(dt);
@@ -292,12 +302,18 @@ export class GameEngine {
   }
 
   handleCollectCoin(coin) {
-    this.runCoins++;
-    Storage.addCoins(1);
-    this.score += CONFIG.COIN_VALUE;
+    // Progressive Coin Streak Counter (+1, +2, +3, +4, +5)
+    this.coinStreak = Math.min(5, this.coinStreak + 1);
+    this.coinStreakTimer = 1.8; // 1.8s window to extend coin trail streak
+    const coinAmount = this.coinStreak;
+
+    this.runCoins += coinAmount;
+    Storage.addCoins(coinAmount);
+    this.score += CONFIG.COIN_VALUE * coinAmount;
+
     Audio.playCoin();
     this.particles.emitCoinSparkles(coin.x, coin.y);
-    this.particles.addFloatingText(coin.x, coin.y - 10, `+${CONFIG.COIN_VALUE}`, '#facc15', 16);
+    this.particles.addFloatingText(coin.x, coin.y - 10, `+${coinAmount}`, '#facc15', 15 + coinAmount * 2);
   }
 
   handleCollectPowerup(powerupType) {

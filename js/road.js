@@ -1,7 +1,7 @@
 /**
- * TRAFFIC ESCAPE — Road & Environment Engine
- * Handles 3-lane / 4-lane highway rendering, dynamic lane expansion at Level 4+,
- * scrolling dash lines, roadside scenery, day/night cycles, and weather.
+ * TRAFFIC ESCAPE — Road & Weather Atmosphere Engine
+ * Handles 3-lane / 4-lane highway rendering, scrolling dash lines, roadside scenery,
+ * day/night cycles, and multi-weather atmospheric effects (Clear, Heavy Rain & Lightning, Dense Fog, Snowstorm).
  */
 
 import { CONFIG } from './config.js';
@@ -34,10 +34,15 @@ export class Road {
     this.timeOfDay = 0; // 0: Day, 1: Sunset, 2: Night, 3: Dawn
     this.ambientLight = 1.0; // 1.0 = Day, 0.35 = Dark Night
 
-    // Weather Effects
-    this.isRaining = false;
+    // Weather Engine System ('clear', 'rain', 'fog', 'snow')
+    this.weatherType = 'clear';
     this.rainDrops = [];
-    this.initRain();
+    this.snowFlakes = [];
+    this.fogClouds = [];
+    this.lightningTimer = 0;
+    this.flashAlpha = 0;
+
+    this.initWeather();
   }
 
   updateLaneGeometry(count) {
@@ -67,14 +72,38 @@ export class Road {
     }
   }
 
-  initRain() {
+  initWeather() {
+    // Rain Particles
     this.rainDrops = [];
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 70; i++) {
       this.rainDrops.push({
         x: Math.random() * this.width,
         y: Math.random() * this.height,
-        length: Math.random() * 20 + 15,
-        speed: Math.random() * 10 + 15
+        length: Math.random() * 22 + 16,
+        speed: Math.random() * 12 + 16
+      });
+    }
+
+    // Snowflakes
+    this.snowFlakes = [];
+    for (let i = 0; i < 60; i++) {
+      this.snowFlakes.push({
+        x: Math.random() * this.width,
+        y: Math.random() * this.height,
+        radius: Math.random() * 3 + 1.5,
+        speed: Math.random() * 2.5 + 1.5,
+        sway: Math.random() * Math.PI * 2
+      });
+    }
+
+    // Fog Clouds
+    this.fogClouds = [];
+    for (let i = 0; i < 12; i++) {
+      this.fogClouds.push({
+        x: Math.random() * this.width,
+        y: Math.random() * this.height,
+        radius: Math.random() * 80 + 70,
+        speed: Math.random() * 0.8 + 0.4
       });
     }
   }
@@ -120,16 +149,56 @@ export class Road {
       this.timeOfDay = 3;
     }
 
-    // Toggle Rain occasionally on higher levels
-    this.isRaining = (distanceMeters > 600) && (Math.floor(distanceMeters / 1200) % 2 === 1);
+    // Multi-Weather Transition Logic based on Level / Distance
+    if (level === 1) {
+      this.weatherType = 'clear';
+    } else if (level === 2) {
+      this.weatherType = 'rain';
+    } else if (level === 3) {
+      this.weatherType = 'fog';
+    } else if (level === 4) {
+      this.weatherType = 'snow';
+    } else {
+      // Dynamic cycling every 500m
+      const wModeIndex = Math.floor(distanceMeters / 500) % 4;
+      const wModes = ['clear', 'rain', 'fog', 'snow'];
+      this.weatherType = wModes[wModeIndex];
+    }
 
-    if (this.isRaining) {
+    // Update Weather Effects
+    if (this.weatherType === 'rain') {
       for (let drop of this.rainDrops) {
         drop.y += drop.speed + moveAmount * 0.3;
         drop.x -= 1.5;
         if (drop.y > this.height) {
           drop.y = -20;
           drop.x = Math.random() * (this.width + 50);
+        }
+      }
+
+      // Lightning Flashes
+      this.lightningTimer += dt;
+      if (this.flashAlpha > 0) this.flashAlpha -= dt * 3;
+      if (this.lightningTimer > 7 && Math.random() < 0.02) {
+        this.flashAlpha = 0.35;
+        this.lightningTimer = 0;
+      }
+    } else if (this.weatherType === 'snow') {
+      for (let flake of this.snowFlakes) {
+        flake.y += flake.speed + moveAmount * 0.15;
+        flake.sway += dt * 2;
+        flake.x += Math.sin(flake.sway) * 0.8;
+        if (flake.y > this.height) {
+          flake.y = -10;
+          flake.x = Math.random() * this.width;
+        }
+      }
+    } else if (this.weatherType === 'fog') {
+      for (let cloud of this.fogClouds) {
+        cloud.y += cloud.speed + moveAmount * 0.1;
+        if (cloud.y > this.height + cloud.radius) {
+          cloud.y = -cloud.radius;
+          cloud.x = Math.random() * this.width;
         }
       }
     }
@@ -144,12 +213,15 @@ export class Road {
     else if (this.timeOfDay === 1) grassColor = '#78350f'; // Sunset warm amber
     else if (this.timeOfDay === 2) grassColor = '#0f172a'; // Deep night slate
 
+    if (this.weatherType === 'snow') grassColor = '#334155'; // Frost ground
+
     ctx.fillStyle = grassColor;
     ctx.fillRect(0, 0, this.width, this.height);
 
     // 2. Draw Main Asphalt Highway
     let asphaltColor = '#1e293b';
     if (this.timeOfDay === 2) asphaltColor = '#0f172a';
+    if (this.weatherType === 'snow') asphaltColor = '#1e293b';
 
     ctx.fillStyle = asphaltColor;
     ctx.fillRect(this.leftEdge, 0, this.roadWidth, this.height);
@@ -176,7 +248,7 @@ export class Road {
     ctx.lineTo(this.rightEdge, this.height);
     ctx.stroke();
 
-    // 5. Draw Dashed Lane Dividers (2 lines for 3-lane road; 3 lines for 4-lane road)
+    // 5. Draw Dashed Lane Dividers
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.lineWidth = 4;
     ctx.setLineDash([this.dashLength, this.dashGap]);
@@ -195,12 +267,12 @@ export class Road {
     // 6. Draw Scenery Objects (Trees & Street Lamps)
     for (let obj of this.sceneryObjects) {
       if (obj.type === 'tree') {
-        ctx.fillStyle = '#064e3b';
+        ctx.fillStyle = this.weatherType === 'snow' ? '#14532d' : '#064e3b';
         ctx.beginPath();
         ctx.arc(obj.x, obj.y, 22, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#047857';
+        ctx.fillStyle = this.weatherType === 'snow' ? '#e2e8f0' : '#047857';
         ctx.beginPath();
         ctx.arc(obj.x - 4, obj.y - 4, 15, 0, Math.PI * 2);
         ctx.fill();
@@ -225,15 +297,16 @@ export class Road {
       }
     }
 
-    // 7. Draw Night Darkness Overlay if Night
+    // 7. Draw Night Darkness Overlay
     if (this.ambientLight < 1.0) {
       ctx.fillStyle = `rgba(15, 23, 42, ${1 - this.ambientLight})`;
       ctx.fillRect(0, 0, this.width, this.height);
     }
 
-    // 8. Draw Rain Particles if Active
-    if (this.isRaining) {
-      ctx.strokeStyle = 'rgba(203, 213, 225, 0.45)';
+    // 8. WEATHER ATMOSPHERE OVERLAYS
+    if (this.weatherType === 'rain') {
+      // Raindrops
+      ctx.strokeStyle = 'rgba(203, 213, 225, 0.48)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       for (let drop of this.rainDrops) {
@@ -241,6 +314,34 @@ export class Road {
         ctx.lineTo(drop.x - 3, drop.y + drop.length);
       }
       ctx.stroke();
+
+      // Lightning Flash Overlay
+      if (this.flashAlpha > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.flashAlpha})`;
+        ctx.fillRect(0, 0, this.width, this.height);
+      }
+    } else if (this.weatherType === 'snow') {
+      // Snowflakes
+      ctx.fillStyle = 'rgba(248, 250, 252, 0.85)';
+      ctx.beginPath();
+      for (let flake of this.snowFlakes) {
+        ctx.moveTo(flake.x, flake.y);
+        ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+      }
+      ctx.fill();
+    } else if (this.weatherType === 'fog') {
+      // Volumetric Rolling Fog Mist
+      for (let cloud of this.fogClouds) {
+        const fogGrad = ctx.createRadialGradient(cloud.x, cloud.y, 10, cloud.x, cloud.y, cloud.radius);
+        fogGrad.addColorStop(0, 'rgba(226, 232, 240, 0.28)');
+        fogGrad.addColorStop(0.7, 'rgba(226, 232, 240, 0.12)');
+        fogGrad.addColorStop(1, 'rgba(226, 232, 240, 0)');
+
+        ctx.fillStyle = fogGrad;
+        ctx.beginPath();
+        ctx.arc(cloud.x, cloud.y, cloud.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     ctx.restore();

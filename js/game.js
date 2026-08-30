@@ -270,6 +270,14 @@ export class GameEngine {
       magnet: { timer: this.player.magnetTimer, maxDuration: CONFIG.MAGNET_DURATION, icon: '🧲' }
     };
 
+    const weatherTextMap = {
+      clear: '☀️ CLEAR',
+      rain: '🌧️ RAIN',
+      fog: '🌫️ FOG',
+      snow: '❄️ SNOW'
+    };
+    const currentWeatherText = weatherTextMap[this.road.weatherType] || '☀️ CLEAR';
+
     this.ui.updateLives(this.player.lives);
     this.ui.updateHUD(
       this.score,
@@ -277,7 +285,8 @@ export class GameEngine {
       this.runCoins,
       this.distanceMeters,
       speedKmH,
-      this.level
+      this.level,
+      currentWeatherText
     );
     this.ui.updateActivePowerups(activeTimers);
   }

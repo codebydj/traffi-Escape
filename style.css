@@ -206,6 +206,16 @@ html, body {
   color: var(--accent-yellow);
 }
 
+.weather-badge {
+  font-family: var(--heading-font);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--accent-cyan);
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
 .hud-label {
   font-size: 0.65rem;
   font-weight: 700;

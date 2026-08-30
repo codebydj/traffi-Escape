@@ -7,9 +7,9 @@ export const CONFIG = {
   CANVAS_WIDTH: 450,
   CANVAS_HEIGHT: 800,
 
-  // Lane Configuration
-  LANE_COUNT: 3,             // Initial lane count (expands to 4 at Level 4+)
-  ROAD_WIDTH_PERCENT: 0.72,  // Road takes 72% of total canvas width
+  // Lane Configuration (Game starts directly with a 4-lane highway!)
+  LANE_COUNT: 4,
+  ROAD_WIDTH_PERCENT: 0.88, // Road takes 88% of total canvas width for 4 lanes
 
   // Gameplay Balancing
   PLAYER_LIVES: 3,
@@ -18,7 +18,7 @@ export const CONFIG = {
   SPEED_ACCELERATION: 0.06,  // Speed increase rate per 100 meters
   COIN_VALUE: 10,            // Base points per coin
   NEAR_MISS_BONUS: 100,      // Score bonus for dodge close calls
-  LEVEL_DISTANCE: 320,       // Distance (meters) needed per level up (Level 4+ expands to 4-lane highway)
+  LEVEL_DISTANCE: 320,       // Distance (meters) needed per level up
 
   // Timers & Powerup Durations (in seconds)
   INVINCIBILITY_DURATION: 2.0,

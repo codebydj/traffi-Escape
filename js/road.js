@@ -12,13 +12,11 @@ export class Road {
     this.width = canvasWidth;
     this.height = canvasHeight;
 
-    // Calculate Initial 3-Lane Road Geometry
-    this.laneCount = CONFIG.LANE_COUNT; // 3 lanes initial
-    this.targetLaneCount = 3;
+    // Calculate Initial 4-Lane Road Geometry
+    this.laneCount = CONFIG.LANE_COUNT; // 4 lanes
+    this.targetLaneCount = 4;
     
-    this.base3LaneWidth = this.width * 0.70;
-    this.base4LaneWidth = this.width * 0.88;
-    this.currentRoadWidth = this.base3LaneWidth;
+    this.currentRoadWidth = this.width * CONFIG.ROAD_WIDTH_PERCENT;
     
     this.leftEdge = (this.width - this.currentRoadWidth) / 2;
     this.rightEdge = this.leftEdge + this.currentRoadWidth;
@@ -117,20 +115,9 @@ export class Road {
   }
 
   update(speed, distanceMeters, level = 1, dt = 0.016) {
-    // Dynamic 4-Lane Highway Expansion at Level 4+
-    this.targetLaneCount = level >= 4 ? 4 : 3;
-    const targetWidth = this.targetLaneCount === 4 ? this.base4LaneWidth : this.base3LaneWidth;
-
-    // Smoothly animate road width expansion
-    if (Math.abs(this.currentRoadWidth - targetWidth) > 0.5) {
-      this.currentRoadWidth = lerp(this.currentRoadWidth, targetWidth, 2.5 * dt);
-      if (Math.abs(this.currentRoadWidth - targetWidth) < 4) {
-        this.laneCount = this.targetLaneCount;
-      }
-    } else {
-      this.currentRoadWidth = targetWidth;
-      this.laneCount = this.targetLaneCount;
-    }
+    this.laneCount = 4;
+    this.targetLaneCount = 4;
+    this.currentRoadWidth = this.width * CONFIG.ROAD_WIDTH_PERCENT;
 
     this.leftEdge = (this.width - this.currentRoadWidth) / 2;
     this.rightEdge = this.leftEdge + this.currentRoadWidth;

@@ -23,6 +23,7 @@ export class UIManager {
       // HUD Stats
       hudLives: document.getElementById('hudLives'),
       hudLevel: document.getElementById('hudLevel'),
+      hudWeather: document.getElementById('hudWeather'),
       hudScore: document.getElementById('hudScore'),
       hudBestScore: document.getElementById('hudBestScore'),
       hudCoins: document.getElementById('hudCoins'),
@@ -110,13 +111,14 @@ export class UIManager {
     });
   }
 
-  updateHUD(score, bestScore, coins, distanceMeters, speedKmh, level) {
+  updateHUD(score, bestScore, coins, distanceMeters, speedKmh, level, weatherText) {
     if (this.elements.hudScore) this.elements.hudScore.textContent = formatScore(score);
     if (this.elements.hudBestScore) this.elements.hudBestScore.textContent = formatScore(bestScore);
     if (this.elements.hudCoins) this.elements.hudCoins.textContent = coins;
     if (this.elements.hudDistance) this.elements.hudDistance.textContent = formatDistance(distanceMeters);
     if (this.elements.hudSpeed) this.elements.hudSpeed.textContent = `${Math.floor(speedKmh)} km/h`;
     if (this.elements.hudLevel) this.elements.hudLevel.textContent = `LEVEL ${level}`;
+    if (this.elements.hudWeather && weatherText) this.elements.hudWeather.textContent = weatherText;
   }
 
   updateActivePowerups(powerupTimers) {

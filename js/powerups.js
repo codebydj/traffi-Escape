@@ -126,7 +126,7 @@ export class PowerupManager {
   }
 
   spawnRandomPowerup() {
-    const lane = randomInt(0, CONFIG.LANE_COUNT - 1);
+    const lane = randomInt(0, this.road.laneCount - 1);
     const typeKey = randomChoice(['shield', 'boost', 'magnet']);
     this.items.push(new PowerupItem(lane, -50, typeKey, this.road));
   }

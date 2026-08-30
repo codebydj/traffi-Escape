@@ -8,8 +8,8 @@ export const CONFIG = {
   CANVAS_HEIGHT: 800,
 
   // Lane Configuration
-  LANE_COUNT: 3,
-  ROAD_WIDTH_PERCENT: 0.72, // Road takes 72% of total canvas width
+  LANE_COUNT: 3,             // Initial lane count (expands to 4 at Level 4+)
+  ROAD_WIDTH_PERCENT: 0.72,  // Road takes 72% of total canvas width
 
   // Gameplay Balancing
   PLAYER_LIVES: 3,
@@ -18,7 +18,7 @@ export const CONFIG = {
   SPEED_ACCELERATION: 0.06,  // Speed increase rate per 100 meters
   COIN_VALUE: 10,            // Base points per coin
   NEAR_MISS_BONUS: 100,      // Score bonus for dodge close calls
-  LEVEL_DISTANCE: 320,       // Distance (meters) needed per level up (320m per level for active progression)
+  LEVEL_DISTANCE: 320,       // Distance (meters) needed per level up (Level 4+ expands to 4-lane highway)
 
   // Timers & Powerup Durations (in seconds)
   INVINCIBILITY_DURATION: 2.0,
@@ -29,7 +29,7 @@ export const CONFIG = {
   // Spawning Intervals (in frames at 60 FPS)
   TRAFFIC_SPAWN_INTERVAL_MIN: 45,
   TRAFFIC_SPAWN_INTERVAL_MAX: 110,
-  COIN_SPAWN_CHANCE: 0.45,
+  COIN_SPAWN_CHANCE: 0.85,    // High coin spawn probability for rich coin trails
   POWERUP_SPAWN_INTERVAL: 750,
 
   // Car Skins Catalog

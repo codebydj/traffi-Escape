@@ -1,6 +1,6 @@
 /**
  * TRAFFIC ESCAPE — Coin Spawning & Magnet Attraction Engine
- * Handles spinning 3D gold coins, pattern spawning, and magnetic vector attraction physics.
+ * Handles spinning 3D gold coins, rich pattern spawning (lines, double-lines, zigzags), and magnetic vector attraction physics.
  */
 
 import { CONFIG } from './config.js';
@@ -36,9 +36,9 @@ export class Coin {
       const dist = distance(this.x, this.y, player.x, player.y);
       if (dist < CONFIG.MAGNET_RADIUS) {
         // Accelerate coin towards player position
-        const pullSpeed = (1 - dist / CONFIG.MAGNET_RADIUS) * 22 * 60 * dt;
-        this.x = lerp(this.x, player.x, pullSpeed * 0.05);
-        this.y = lerp(this.y, player.y, pullSpeed * 0.05);
+        const pullSpeed = (1 - dist / CONFIG.MAGNET_RADIUS) * 24 * 60 * dt;
+        this.x = lerp(this.x, player.x, pullSpeed * 0.06);
+        this.y = lerp(this.y, player.y, pullSpeed * 0.06);
       }
     }
   }
@@ -71,7 +71,7 @@ export class Coin {
     ctx.arc(0, 0, this.radius * 0.7, 0, Math.PI * 2);
     ctx.fill();
 
-    // Dollar/Star Center Symbol
+    // Dollar Symbol
     ctx.fillStyle = '#fef08a';
     ctx.font = 'bold 10px sans-serif';
     ctx.textAlign = 'center';
@@ -97,8 +97,8 @@ export class CoinManager {
   update(speed, player, dt, onCollectCoin) {
     this.spawnTimer++;
 
-    // Attempt coin pattern spawn every ~120 frames
-    if (this.spawnTimer >= 140) {
+    // High frequency coin pattern spawn (every ~65 frames)
+    if (this.spawnTimer >= 65) {
       this.spawnTimer = 0;
       if (Math.random() < CONFIG.COIN_SPAWN_CHANCE) {
         this.spawnCoinPattern();
@@ -125,16 +125,38 @@ export class CoinManager {
   }
 
   spawnCoinPattern() {
-    const lane = randomInt(0, CONFIG.LANE_COUNT - 1);
-    const patternType = randomChoice(['single', 'line', 'line']);
+    const laneCount = this.road.laneCount;
+    const lane = randomInt(0, laneCount - 1);
+    const patternType = randomChoice(['long_line', 'long_line', 'double_line', 'zigzag', 'cluster']);
 
-    if (patternType === 'single') {
-      this.coins.push(new Coin(lane, -40, this.road));
-    } else if (patternType === 'line') {
-      // 3 to 5 coins in a vertical line
-      const count = randomInt(3, 5);
+    if (patternType === 'long_line') {
+      // 5 to 8 coins in a straight line
+      const count = randomInt(5, 8);
       for (let i = 0; i < count; i++) {
-        this.coins.push(new Coin(lane, -40 - i * 36, this.road));
+        this.coins.push(new Coin(lane, -40 - i * 34, this.road));
+      }
+    } else if (patternType === 'double_line') {
+      // 2 parallel lines of 5 coins in adjacent lanes
+      const lane2 = (lane + 1) % laneCount;
+      const count = 5;
+      for (let i = 0; i < count; i++) {
+        this.coins.push(new Coin(lane, -40 - i * 34, this.road));
+        this.coins.push(new Coin(lane2, -40 - i * 34, this.road));
+      }
+    } else if (patternType === 'zigzag') {
+      // Alternating coins across adjacent lanes
+      const lane2 = (lane + 1) % laneCount;
+      const count = 6;
+      for (let i = 0; i < count; i++) {
+        const curLane = (i % 2 === 0) ? lane : lane2;
+        this.coins.push(new Coin(curLane, -40 - i * 34, this.road));
+      }
+    } else if (patternType === 'cluster') {
+      // 4 to 6 coins forming a cluster
+      const count = randomInt(4, 6);
+      for (let i = 0; i < count; i++) {
+        const offsetLane = (lane + (i % 2)) % laneCount;
+        this.coins.push(new Coin(offsetLane, -40 - i * 28, this.road));
       }
     }
   }

@@ -208,11 +208,12 @@ export class GameEngine {
     if (calculatedLevel > this.level) {
       this.level = calculatedLevel;
       Audio.playLevelUp();
-      this.particles.addFloatingText(this.road.width / 2, this.road.height / 3, `LEVEL ${this.level}!`, '#facc15', 28);
+      const popupText = (this.level === 4) ? 'LEVEL 4! 4-LANE HIGHWAY!' : `LEVEL ${this.level}!`;
+      this.particles.addFloatingText(this.road.width / 2, this.road.height / 3, popupText, '#facc15', 26);
     }
 
     // 6. Entity Updates
-    this.road.update(this.speed, this.distanceMeters, dt);
+    this.road.update(this.speed, this.distanceMeters, this.level, dt);
     this.player.update(dt);
     this.traffic.update(this.speed, this.player, this.level, this.distanceMeters, dt);
     this.coins.update(this.speed, this.player, dt, (coin) => this.handleCollectCoin(coin));

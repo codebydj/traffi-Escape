@@ -62,7 +62,7 @@ export class Player {
   }
 
   moveRight() {
-    if (this.currentLane < CONFIG.LANE_COUNT - 1) {
+    if (this.currentLane < this.road.laneCount - 1) {
       this.currentLane++;
       this.targetX = this.road.getLaneCenter(this.currentLane);
       return true;

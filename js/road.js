@@ -1,6 +1,7 @@
 /**
  * TRAFFIC ESCAPE — Road & Environment Engine
- * Handles 3-lane highway rendering, scrolling dash lines, roadside objects, day/night cycles, and rain weather.
+ * Handles 3-lane / 4-lane highway rendering, dynamic lane expansion at Level 4+,
+ * scrolling dash lines, roadside scenery, day/night cycles, and weather.
  */
 
 import { CONFIG } from './config.js';
@@ -15,14 +16,10 @@ export class Road {
     this.roadWidth = this.width * CONFIG.ROAD_WIDTH_PERCENT;
     this.leftEdge = (this.width - this.roadWidth) / 2;
     this.rightEdge = this.leftEdge + this.roadWidth;
-    this.laneWidth = this.roadWidth / CONFIG.LANE_COUNT;
 
-    // Calculate Lane Centers [Lane 0, Lane 1, Lane 2]
-    this.laneCenters = [
-      this.leftEdge + this.laneWidth * 0.5,
-      this.leftEdge + this.laneWidth * 1.5,
-      this.leftEdge + this.laneWidth * 2.5
-    ];
+    // Default to 3 lanes; dynamically expands to 4 lanes at Level 4+
+    this.laneCount = CONFIG.LANE_COUNT;
+    this.updateLaneGeometry(this.laneCount);
 
     // Scrolling & Motion
     this.offsetY = 0;
@@ -34,8 +31,8 @@ export class Road {
     this.initScenery();
 
     // Day/Night & Atmosphere Parameters
-    this.timeOfDay = 0; // 0: Day, 1: Sunset, 2: Night, 3: Dawn (cycles back)
-    this.ambientLight = 1.0; // 1.0 = Day, 0.3 = Dark Night
+    this.timeOfDay = 0; // 0: Day, 1: Sunset, 2: Night, 3: Dawn
+    this.ambientLight = 1.0; // 1.0 = Day, 0.35 = Dark Night
 
     // Weather Effects
     this.isRaining = false;
@@ -43,9 +40,17 @@ export class Road {
     this.initRain();
   }
 
+  updateLaneGeometry(count) {
+    this.laneCount = count;
+    this.laneWidth = this.roadWidth / this.laneCount;
+    this.laneCenters = [];
+    for (let i = 0; i < this.laneCount; i++) {
+      this.laneCenters.push(this.leftEdge + this.laneWidth * (i + 0.5));
+    }
+  }
+
   initScenery() {
     this.sceneryObjects = [];
-    // Populate left and right roadside objects
     for (let y = -200; y < this.height + 200; y += 120) {
       this.sceneryObjects.push({
         side: 'left',
@@ -75,10 +80,17 @@ export class Road {
   }
 
   getLaneCenter(laneIndex) {
-    return this.laneCenters[Math.max(0, Math.min(CONFIG.LANE_COUNT - 1, laneIndex))];
+    const clampedIndex = Math.max(0, Math.min(this.laneCount - 1, laneIndex));
+    return this.laneCenters[clampedIndex];
   }
 
-  update(speed, distanceMeters, dt = 0.016) {
+  update(speed, distanceMeters, level = 1, dt = 0.016) {
+    // Dynamic 4-Lane Highway Expansion at Level 4+
+    const targetLanes = level >= 4 ? 4 : 3;
+    if (this.laneCount !== targetLanes) {
+      this.updateLaneGeometry(targetLanes);
+    }
+
     // Scroll road markings
     const moveAmount = speed * 60 * dt;
     this.offsetY = (this.offsetY + moveAmount) % (this.dashLength + this.dashGap);
@@ -93,22 +105,17 @@ export class Road {
     }
 
     // Update Day/Night Cycle based on distance
-    // Every 800m transitions to next phase
     const cycleProgress = (distanceMeters % 3200) / 3200;
     if (cycleProgress < 0.4) {
-      // Day
       this.ambientLight = 1.0;
       this.timeOfDay = 0;
     } else if (cycleProgress < 0.5) {
-      // Transition to Sunset
       this.ambientLight = lerp(1.0, 0.65, (cycleProgress - 0.4) / 0.1);
       this.timeOfDay = 1;
     } else if (cycleProgress < 0.85) {
-      // Night
       this.ambientLight = 0.35;
       this.timeOfDay = 2;
     } else {
-      // Dawn back to Day
       this.ambientLight = lerp(0.35, 1.0, (cycleProgress - 0.85) / 0.15);
       this.timeOfDay = 3;
     }
@@ -119,7 +126,7 @@ export class Road {
     if (this.isRaining) {
       for (let drop of this.rainDrops) {
         drop.y += drop.speed + moveAmount * 0.3;
-        drop.x -= 1.5; // Slightly slanted rain
+        drop.x -= 1.5;
         if (drop.y > this.height) {
           drop.y = -20;
           drop.x = Math.random() * (this.width + 50);
@@ -155,9 +162,7 @@ export class Road {
     for (let y = -stripeHeight * 2; y < this.height + stripeHeight; y += stripeHeight) {
       const isRed = Math.floor((y - curbOffsetY) / stripeHeight) % 2 === 0;
       ctx.fillStyle = isRed ? '#ef4444' : '#f8fafc';
-      // Left Curb
       ctx.fillRect(this.leftEdge - curbWidth, y + curbOffsetY, curbWidth, stripeHeight);
-      // Right Curb
       ctx.fillRect(this.rightEdge, y + curbOffsetY, curbWidth, stripeHeight);
     }
 
@@ -171,32 +176,25 @@ export class Road {
     ctx.lineTo(this.rightEdge, this.height);
     ctx.stroke();
 
-    // 5. Draw Dashed Lane Dividers (2 inner lane lines)
+    // 5. Draw Dashed Lane Dividers (2 lines for 3-lane road; 3 lines for 4-lane road)
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.lineWidth = 4;
     ctx.setLineDash([this.dashLength, this.dashGap]);
     ctx.lineDashOffset = -this.offsetY;
 
-    // Line between Lane 0 and Lane 1
-    const line1X = this.leftEdge + this.laneWidth;
-    ctx.beginPath();
-    ctx.moveTo(line1X, -100);
-    ctx.lineTo(line1X, this.height + 100);
-    ctx.stroke();
-
-    // Line between Lane 1 and Lane 2
-    const line2X = this.leftEdge + this.laneWidth * 2;
-    ctx.beginPath();
-    ctx.moveTo(line2X, -100);
-    ctx.lineTo(line2X, this.height + 100);
-    ctx.stroke();
+    for (let i = 1; i < this.laneCount; i++) {
+      const lineX = this.leftEdge + this.laneWidth * i;
+      ctx.beginPath();
+      ctx.moveTo(lineX, -100);
+      ctx.lineTo(lineX, this.height + 100);
+      ctx.stroke();
+    }
 
     ctx.setLineDash([]); // Reset line dash
 
     // 6. Draw Scenery Objects (Trees & Street Lamps)
     for (let obj of this.sceneryObjects) {
       if (obj.type === 'tree') {
-        // Draw Tree
         ctx.fillStyle = '#064e3b';
         ctx.beginPath();
         ctx.arc(obj.x, obj.y, 22, 0, Math.PI * 2);
@@ -207,18 +205,15 @@ export class Road {
         ctx.arc(obj.x - 4, obj.y - 4, 15, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // Draw Street Lamp Post
         ctx.fillStyle = '#64748b';
         ctx.fillRect(obj.x - 3, obj.y - 12, 6, 24);
 
-        // Lamp Bulb & Night Glow
         ctx.fillStyle = '#fef08a';
         ctx.beginPath();
         ctx.arc(obj.x, obj.y - 12, 6, 0, Math.PI * 2);
         ctx.fill();
 
         if (this.timeOfDay === 2) {
-          // Night Streetlight Radial Cone
           const glowGrad = ctx.createRadialGradient(obj.x, obj.y - 12, 4, obj.x, obj.y - 12, 80);
           glowGrad.addColorStop(0, 'rgba(254, 240, 138, 0.35)');
           glowGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
